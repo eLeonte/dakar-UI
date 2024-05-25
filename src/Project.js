@@ -1,6 +1,6 @@
-import { tsContructorType } from "@babel/types";
 import React, { Component } from "react";
 import { variables } from "./Variables.js";
+import "./App.css";
 
 export class Project extends Component {
   constructor(props) {
@@ -8,14 +8,22 @@ export class Project extends Component {
 
     this.state = {
       projects: [],
+      selectedProject: null,
+      selectedProjectDescription: "",
+      testCases: [],
+      loading: true,
+      error: null,
     };
+
+    this.selectProject = this.selectProject.bind(this);
+    this.fetchProjectDetails = this.fetchProjectDetails.bind(this);
+    this.goBackToProjects = this.goBackToProjects.bind(this);
   }
 
   refreshList() {
     fetch(variables.API_URL + "project")
       .then((response) => {
         if (!response.ok) {
-          // If the response status code is not in the 200-299 range
           throw new Error(
             "Network response was not ok: " + response.statusText
           );
@@ -23,71 +31,128 @@ export class Project extends Component {
         return response.json();
       })
       .then((data) => {
-        this.setState({ projects: data });
+        this.setState({ projects: data, loading: false });
       })
       .catch((error) => {
-        // Log any errors for debugging purposes
+        this.setState({ error, loading: false });
         console.error("Fetch error:", error);
       });
   }
+
   componentDidMount() {
-    console.log("Intra?");
     this.refreshList();
   }
 
-  render() {
-    const { projects } = this.state;
-    return (
-      <div>
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th>ProjectId</th>
-              <th>ProjectName</th>
-              <th>Options</th>
-            </tr>
-          </thead>
-          <tbody>
-            {projects.map((prj) => (
-              <tr key={prj.ProjectID}>
-                <td>{prj.ProjectID}</td>
-                <td>{prj.ProjectDescription}</td>
+  selectProject(projectId, projectDescription) {
+    this.setState(
+      {
+        selectedProject: projectId,
+        selectedProjectDescription: projectDescription,
+        loading: true,
+        error: null,
+      },
+      () => {
+        this.fetchProjectDetails(projectId);
+      }
+    );
+  }
 
-                <td>
-                  <button type="button" className="btn btn-light mr-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      fill="currentColor"
-                      class="bi bi-pencil-square"
-                      viewBox="0 0 16 16"
-                    >
-                      <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
-                      <path
-                        fill-rule="evenodd"
-                        d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"
-                      />
-                    </svg>
-                  </button>
-                  <button type="button" className="btn btn-light mr-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      fill="currentColor"
-                      class="bi bi-trash"
-                      viewBox="0 0 16 16"
-                    >
-                      <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
-                      <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
-                    </svg>
-                  </button>
-                </td>
+  fetchProjectDetails(projectId) {
+    fetch(variables.API_URL + `TestCase/${projectId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            "Network response was not ok: " + response.statusText
+          );
+        }
+        return response.json();
+      })
+      .then((data) => {
+        this.setState({ testCases: data, loading: false });
+      })
+      .catch((error) => {
+        this.setState({ error, loading: false });
+        console.error("Fetch error:", error);
+      });
+  }
+
+  goBackToProjects() {
+    this.setState({ selectedProject: null });
+  }
+
+  render() {
+    const {
+      projects,
+      selectedProject,
+      selectedProjectDescription,
+      testCases,
+      loading,
+      error,
+    } = this.state;
+
+    if (loading) {
+      return <div>Loading...</div>;
+    }
+
+    if (error) {
+      return <div className="alert alert-danger">Error: {error.message}</div>;
+    }
+
+    if (selectedProject) {
+      return (
+        <div className="container mt-4">
+          <button
+            onClick={this.goBackToProjects}
+            className="btn btn-secondary mb-3"
+          >
+            Back to Projects
+          </button>
+          <h2>{selectedProjectDescription}</h2>
+          <table className="table table-hover">
+            <thead className="thead-dark">
+              <tr>
+                <th>TestCaseId</th>
+                <th>TestCaseName</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {testCases.map((tc) => (
+                <tr key={tc.TestCaseId}>
+                  <td>{tc.TestCaseId}</td>
+                  <td>{tc.TestCaseName}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    return (
+      <div className="container mt-4">
+        <h2>Projects</h2>
+        <div className="row justify-content-center">
+          {projects.map((prj) => (
+            <div
+              key={prj.ProjectID}
+              className="col-sm-6 col-md-4 col-lg-3 mb-4"
+            >
+              <div className="card h-100">
+                <div className="card-body d-flex flex-column">
+                  <h5 className="card-title">{prj.ProjectDescription}</h5>
+                  <button
+                    onClick={() =>
+                      this.selectProject(prj.ProjectID, prj.ProjectDescription)
+                    }
+                    className="btn btn-primary mt-auto"
+                  >
+                    Open
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

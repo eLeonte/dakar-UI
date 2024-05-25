@@ -3,6 +3,7 @@ import "./App.css";
 import { Home } from "./Home";
 import { Project } from "./Project";
 import { TestCase } from "./TestCase";
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -16,7 +17,7 @@ function App() {
       <div className="App container">
         <h3 className="d-flex justify-content-center m-3">
           {" "}
-          React JS Frontend
+          Dakar Testing App
         </h3>
 
         <nav className="navbar navbar-expand-sm bg-light navbar-dark">
