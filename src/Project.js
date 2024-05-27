@@ -11,6 +11,9 @@ export class Project extends Component {
       selectedProject: null,
       selectedProjectDescription: "",
       testCases: [],
+      selectedTestCase: null,
+      selectedTestCaseName: "",
+      testCaseSteps: [],
       loading: true,
       error: null,
     };
@@ -18,9 +21,13 @@ export class Project extends Component {
     this.selectProject = this.selectProject.bind(this);
     this.fetchProjectDetails = this.fetchProjectDetails.bind(this);
     this.goBackToProjects = this.goBackToProjects.bind(this);
+    this.selectTestCase = this.selectTestCase.bind(this);
+    this.goBackToTestCases = this.goBackToTestCases.bind(this);
   }
 
   refreshList() {
+    console.log("Fetching project list...");
+
     fetch(variables.API_URL + "project")
       .then((response) => {
         if (!response.ok) {
@@ -50,9 +57,25 @@ export class Project extends Component {
         selectedProjectDescription: projectDescription,
         loading: true,
         error: null,
+        selectedTestCase: null,
+        testCaseSteps: [],
       },
       () => {
         this.fetchProjectDetails(projectId);
+      }
+    );
+  }
+
+  selectTestCase(testCaseId, testCaseName) {
+    this.setState(
+      {
+        selectedTestCase: testCaseId,
+        selectedTestCaseName: testCaseName,
+        loading: true,
+        error: null,
+      },
+      () => {
+        this.fetchTestCaseSteps(testCaseId);
       }
     );
   }
@@ -76,8 +99,35 @@ export class Project extends Component {
       });
   }
 
+  fetchTestCaseSteps(testCaseId) {
+    fetch(variables.API_URL + `TestCaseSteps/${testCaseId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            "Network response was not ok: " + response.statusText
+          );
+        }
+        return response.json();
+      })
+      .then((data) => {
+        this.setState({ testCaseSteps: data, loading: false });
+      })
+      .catch((error) => {
+        this.setState({ error, loading: false });
+        console.error("Fetch error:", error);
+      });
+  }
+
   goBackToProjects() {
-    this.setState({ selectedProject: null });
+    this.setState({
+      selectedProject: null,
+      selectedTestCase: null,
+      testCaseSteps: [],
+    });
+  }
+
+  goBackToTestCases() {
+    this.setState({ selectedTestCase: null, testCaseSteps: [] });
   }
 
   render() {
@@ -86,6 +136,9 @@ export class Project extends Component {
       selectedProject,
       selectedProjectDescription,
       testCases,
+      selectedTestCase,
+      selectedTestCaseName,
+      testCaseSteps,
       loading,
       error,
     } = this.state;
@@ -99,6 +152,38 @@ export class Project extends Component {
     }
 
     if (selectedProject) {
+      if (selectedTestCase) {
+        return (
+          <div className="container mt-4">
+            <button
+              onClick={this.goBackToTestCases}
+              className="btn btn-secondary mb-3"
+            >
+              Back to Test Cases
+            </button>
+            <h2>{selectedTestCaseName}</h2>
+            <table className="table table-hover">
+              <thead className="thead-dark">
+                <tr>
+                  <th>StepId</th>
+                  <th>Test Step</th>
+                  <th>Expected Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {testCaseSteps.map((step) => (
+                  <tr key={step.StepID}>
+                    <td>{step.StepID}</td>
+                    <td>{step.StepDescription}</td>
+                    <td>{step.ExpectedResult}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+
       return (
         <div className="container mt-4">
           <button
@@ -119,7 +204,16 @@ export class Project extends Component {
               {testCases.map((tc) => (
                 <tr key={tc.TestCaseId}>
                   <td>{tc.TestCaseId}</td>
-                  <td>{tc.TestCaseName}</td>
+                  <td>
+                    <a
+                      href="#"
+                      onClick={() =>
+                        this.selectTestCase(tc.TestCaseId, tc.TestCaseName)
+                      }
+                    >
+                      {tc.TestCaseName}
+                    </a>
+                  </td>
                 </tr>
               ))}
             </tbody>

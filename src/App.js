@@ -35,21 +35,21 @@ function App() {
                 Projects
               </NavLink>
             </li>
-            <li className="nav-item- m-1">
+            {/* <li className="nav-item- m-1">
               <NavLink
                 className="btn btn-light btn-outline-primary"
                 to="/testcase"
               >
                 Test Cases
               </NavLink>
-            </li>
+            </li> */}
           </ul>
         </nav>
 
         <Routes>
           <Route path="/home" element={<Home />} />
           <Route path="/project" element={<Project />} />
-          <Route path="/testcase" element={<TestCase />} />
+          {/* <Route path="/testcase" element={<TestCase />} /> */}
         </Routes>
       </div>
     </Router>
