@@ -35,14 +35,6 @@ function App() {
                 Projects
               </NavLink>
             </li>
-            {/* <li className="nav-item- m-1">
-              <NavLink
-                className="btn btn-light btn-outline-primary"
-                to="/testcase"
-              >
-                Test Cases
-              </NavLink>
-            </li> */}
           </ul>
         </nav>
 
