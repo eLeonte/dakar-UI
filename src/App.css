@@ -88,3 +88,7 @@ a:hover {
 .row.justify-content-center {
   justify-content: center !important;
 }
+
+.wide-button {
+  width: 100px;
+}
