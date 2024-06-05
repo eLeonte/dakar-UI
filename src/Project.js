@@ -1,5 +1,7 @@
 import React, { Component } from "react";
 import { variables } from "./Variables.js";
+// import { Link, Route, Routes } from "react-router-dom";
+// import CreateTestRun from "./CreateTestRun.js";
 import "./App.css";
 
 export class Project extends Component {
@@ -23,6 +25,8 @@ export class Project extends Component {
       testCaseSteps: [],
       loading: true,
       error: null,
+      isTestRunMode: false,
+      testRunStatus: {},
     };
 
     this.selectProject = this.selectProject.bind(this);
@@ -39,6 +43,8 @@ export class Project extends Component {
     this.addStepClick = this.addStepClick.bind(this);
     this.changeStepDescription = this.changeStepDescription.bind(this);
     this.changeExpectedResult = this.changeExpectedResult.bind(this);
+    this.handleNewTestRun = this.handleNewTestRun.bind(this);
+    this.handleStatusChange = this.handleStatusChange.bind(this);
   }
 
   refreshList() {
@@ -73,6 +79,8 @@ export class Project extends Component {
         error: null,
         selectedTestCase: null,
         testCaseSteps: [],
+        isTestCaseView: false,
+        isTestRunMode: false,
       },
       () => {
         this.fetchProjectDetails(projectId);
@@ -87,11 +95,46 @@ export class Project extends Component {
         selectedTestCaseName: testCaseName,
         loading: true,
         error: null,
+        isTestCaseView: true,
       },
       () => {
         this.fetchTestCaseSteps(testCaseId);
       }
     );
+  }
+
+  goBackToTestCases() {
+    this.setState({
+      selectedTestCase: null,
+      testCaseSteps: [],
+      isTestCaseView: false,
+    });
+  }
+
+  handleNewTestRun() {
+    this.setState({
+      isTestRunMode: true,
+      selectedTestCase: null,
+      testCaseSteps: [],
+    });
+  }
+
+  goBack() {
+    if (this.state.isTestRunMode) {
+      this.setState({
+        isTestRunMode: false,
+        selectedTestCase: null,
+        testCaseSteps: [],
+      });
+    } else if (this.state.isTestCaseView) {
+      this.goBackToTestCases();
+    } else {
+      this.setState({
+        selectedProject: null,
+        selectedTestCase: null,
+        testCaseSteps: [],
+      });
+    }
   }
 
   fetchProjectDetails(projectId) {
@@ -137,15 +180,11 @@ export class Project extends Component {
       selectedProject: null,
       selectedTestCase: null,
       testCaseSteps: [],
+      isTestRunMode: false, // Reset test run mode
     });
   }
 
-  goBackToTestCases() {
-    this.setState({ selectedTestCase: null, testCaseSteps: [] });
-  }
-
   // Add, Update and Delete Projects Functions
-
   changeProjectDescription(p) {
     this.setState({ ProjectDescription: p.target.value });
   }
@@ -234,7 +273,11 @@ export class Project extends Component {
   }
 
   deleteClick(id) {
-    if (window.confirm("Are you sure?")) {
+    if (
+      window.confirm(
+        "Are you sure? Test cases related to this project will also be removed"
+      )
+    ) {
       fetch(variables.API_URL + "project/" + id, {
         method: "DELETE",
         headers: {
@@ -384,7 +427,6 @@ export class Project extends Component {
   }
 
   // Add, Update and Delete Test Case Step Functions
-
   addStepClick() {
     this.setState({
       modalTitle: "Add Test Case Step",
@@ -482,9 +524,9 @@ export class Project extends Component {
       );
   }
 
-  deleteStepClick(id) {
+  deleteStepClick(id, stepID) {
     if (window.confirm("Are you sure?")) {
-      fetch(variables.API_URL + "TestCaseSteps/" + id, {
+      fetch(`${variables.API_URL}TestCaseSteps/${id}/${stepID}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
@@ -511,6 +553,116 @@ export class Project extends Component {
     }
   }
 
+  generateReport() {
+    const { testCases, testRunStatus, selectedProjectDescription } = this.state;
+    const reportData = testCases.map((tc) => ({
+      TestCaseId: tc.TestCaseId,
+      TestCaseName: tc.TestCaseName,
+      Status: testRunStatus[tc.TestCaseId] || "Untested",
+    }));
+
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    // Convert the report data to HTML
+    const reportHtml = `
+      <html>
+        <head>
+          <title>Test Report</title>
+          <style>
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th, td {
+              border: 1px solid black;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f2f2f2;
+            }
+            .status-circle {
+              width: 12px;
+              height: 12px;
+              border-radius: 50%;
+              display: inline-block;
+              margin-right: 8px;
+            }
+            .status-passed {
+              background-color: green;
+            }
+            .status-failed {
+              background-color: red;
+            }
+            .status-blocked {
+              background-color: blue;
+            }
+            .status-retest {
+              background-color: yellow;
+            }
+            .status-untested {
+              background-color: gray;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Test Report</h1>
+          <p>Date: ${formattedDate}</p>
+          <p>Project: ${selectedProjectDescription}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>TestCaseId</th>
+                <th>TestCaseName</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reportData
+                .map(
+                  (tc) => `
+                <tr>
+                  <td>${tc.TestCaseId}</td>
+                  <td>${tc.TestCaseName}</td>
+                  <td>
+                    <span class="status-circle status-${tc.Status.toLowerCase()}"></span>
+                    ${tc.Status}
+                  </td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    // Open a new window and write the report HTML
+    const reportWindow = window.open("", "_blank");
+    reportWindow.document.write(reportHtml);
+    reportWindow.document.close();
+
+    // Trigger the print dialog
+    reportWindow.print();
+  }
+
+  //Handler for status change dropdown
+  handleStatusChange(testCaseId, event) {
+    const { value } = event.target;
+    this.setState((prevState) => ({
+      testRunStatus: {
+        ...prevState.testRunStatus,
+        [testCaseId]: value,
+      },
+    }));
+  }
+
   render() {
     const {
       modalTitle,
@@ -529,7 +681,24 @@ export class Project extends Component {
       testCaseSteps,
       loading,
       error,
+      isTestRunMode,
+      testRunStatus,
     } = this.state;
+
+    const getStatusClass = (status) => {
+      switch (status) {
+        case "Passed":
+          return "status-circle status-passed";
+        case "Failed":
+          return "status-circle status-failed";
+        case "Blocked":
+          return "status-circle status-blocked";
+        case "Retest":
+          return "status-circle status-retest";
+        default:
+          return "status-circle";
+      }
+    };
 
     if (loading) {
       return <div>Loading...</div>;
@@ -537,6 +706,225 @@ export class Project extends Component {
 
     if (error) {
       return <div className="alert alert-danger">Error: {error.message}</div>;
+    }
+
+    // Conditional rendering based on isTestRunMode
+    if (isTestRunMode && selectedProject) {
+      if (selectedTestCase) {
+        return (
+          <div className="container mt-4">
+            <button
+              onClick={this.goBackToTestCases}
+              className="btn btn-secondary mb-3"
+            >
+              Back to Test Run
+            </button>
+            <h2>{selectedTestCaseName}</h2>
+            <table className="table table-hover">
+              <thead className="thead-dark">
+                <tr>
+                  <th>StepId</th>
+                  <th>Test Step</th>
+                  <th>Expected Result</th>
+                  {/* <th>Options</th> */}
+                </tr>
+              </thead>
+              <tbody>
+                {testCaseSteps.map((step) => (
+                  <tr key={step.StepID}>
+                    <td>{step.StepID}</td>
+                    <td>{step.StepDescription}</td>
+                    <td>{step.ExpectedResult}</td>
+                    {/* <td>
+                      {" "}
+                      <button
+                        type="button"
+                        className="btn btn-light mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#testCaseStepsModal"
+                        onClick={() => this.editStepClick(step)}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          className="bi bi-pencil-square"
+                          viewBox="0 0 16 16"
+                        >
+                          <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+                          <path
+                            fillRule="evenodd"
+                            d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-light mr-1"
+                        onClick={() =>
+                          this.deleteStepClick(step.TestCaseId, step.StepID)
+                        }
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          className="bi bi-trash-fill"
+                          viewBox="0 0 16 16"
+                        >
+                          <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z" />
+                        </svg>
+                      </button>
+                    </td> */}
+                  </tr>
+                ))}
+                {/* <tr>
+                  <td colSpan="4" className="text-center">
+                    <button
+                      type="button"
+                      className="btn btn-primary wide-button new-btn"
+                      data-bs-toggle="modal"
+                      data-bs-target="#testCaseStepsModal"
+                      onClick={this.addStepClick}
+                    >
+                      + New
+                    </button>
+                  </td>
+                </tr> */}
+              </tbody>
+            </table>
+
+            {/* Test Case Steps Modal */}
+            <div
+              className="modal fade"
+              id="testCaseStepsModal"
+              tabIndex="-1"
+              aria-labelledby="testCaseStepModalLabel"
+              aria-hidden="true"
+            >
+              <div className="modal-dialog modal-lg modal-dialog-centered">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title" id="testCaseStepModalLabel">
+                      {modalTitle}
+                    </h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="input-group mb-3">
+                      <span className="input-group-text">Step description</span>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={StepDescription}
+                        onChange={this.changeStepDescription}
+                      />
+                    </div>
+                    <div className="input-group mb-3">
+                      <span className="input-group-text">Expected result</span>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={ExpectedResult}
+                        onChange={this.changeExpectedResult}
+                      />
+                    </div>
+                    {this.state.StepID === 0 ? (
+                      <button
+                        type="button"
+                        className="btn btn-primary float-start"
+                        onClick={() => this.createTcStepClick()}
+                      >
+                        Create
+                      </button>
+                    ) : null}
+                    {this.state.StepID !== 0 ? (
+                      <button
+                        type="button"
+                        className="btn btn-primary float-start"
+                        onClick={() => this.updateTcStepClick()}
+                      >
+                        Update
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="container mt-4">
+          <div className="button-group">
+            <button
+              onClick={() => this.goBack()}
+              className="btn btn-secondary mb-3"
+            >
+              Back
+            </button>
+            <button
+              onClick={() => this.generateReport()}
+              className="btn btn-primary mb-3"
+            >
+              Generate Report
+            </button>
+          </div>
+          <h2>{selectedProjectDescription}</h2>
+          <table className="table table-hover">
+            <thead className="thead-dark">
+              <tr>
+                <th>TestCaseName</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {testCases.map((tc) => (
+                <tr key={tc.TestCaseId}>
+                  <td>
+                    <a
+                      href="#"
+                      onClick={() =>
+                        this.selectTestCase(tc.TestCaseId, tc.TestCaseName)
+                      }
+                    >
+                      {tc.TestCaseName}
+                    </a>
+                  </td>
+                  <td>
+                    <div className="d-flex align-items-center">
+                      <span
+                        className={getStatusClass(testRunStatus[tc.TestCaseId])}
+                      ></span>
+                      <select
+                        className="form-select"
+                        value={testRunStatus[tc.TestCaseId] || ""}
+                        onChange={(event) =>
+                          this.handleStatusChange(tc.TestCaseId, event)
+                        }
+                      >
+                        <option value="">Untested</option>
+                        <option value="Passed">Passed</option>
+                        <option value="Failed">Failed</option>
+                        <option value="Blocked">Blocked</option>
+                        <option value="Retest">Retest</option>
+                      </select>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
     }
 
     if (selectedProject) {
@@ -569,7 +957,7 @@ export class Project extends Component {
                       {" "}
                       <button
                         type="button"
-                        className="btn btn-light mr-1"
+                        className="btn btn-light custom-margin-right"
                         data-bs-toggle="modal"
                         data-bs-target="#testCaseStepsModal"
                         onClick={() => this.editStepClick(step)}
@@ -591,8 +979,10 @@ export class Project extends Component {
                       </button>
                       <button
                         type="button"
-                        className="btn btn-light mr-1"
-                        onClick={() => this.deleteStepClick(step.TestCaseId)}
+                        className="btn btn-light custom-margin-right"
+                        onClick={() =>
+                          this.deleteStepClick(step.TestCaseId, step.StepID)
+                        }
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -612,7 +1002,7 @@ export class Project extends Component {
                   <td colSpan="4" className="text-center">
                     <button
                       type="button"
-                      className="btn btn-primary wide-button"
+                      className="btn btn-primary wide-button new-btn"
                       data-bs-toggle="modal"
                       data-bs-target="#testCaseStepsModal"
                       onClick={this.addStepClick}
@@ -692,22 +1082,31 @@ export class Project extends Component {
 
       return (
         <div className="container mt-4">
-          <button
-            onClick={this.goBackToProjects}
-            className="btn btn-secondary mb-3"
-          >
-            Back to Projects
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary mb-3"
-            data-bs-toggle="modal"
-            data-bs-target="#testCaseModal"
-            onClick={this.addTcClick}
-          >
-            + New
-          </button>
+          <div className="button-group">
+            <button
+              onClick={this.goBackToProjects}
+              className="btn btn-secondary mb-3"
+            >
+              Back to Projects
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary mb-3"
+              data-bs-toggle="modal"
+              data-bs-target="#testCaseModal"
+              onClick={this.addTcClick}
+            >
+              + New
+            </button>
 
+            <button
+              type="button"
+              className="btn btn-primary mb-3"
+              onClick={() => this.setState({ isTestRunMode: true })}
+            >
+              Test Run
+            </button>
+          </div>
           <h2>{selectedProjectDescription}</h2>
           <table className="table table-hover">
             <thead className="thead-dark">
@@ -732,10 +1131,9 @@ export class Project extends Component {
                     </a>
                   </td>
                   <td>
-                    {" "}
                     <button
                       type="button"
-                      className="btn btn-light mr-1"
+                      className="btn btn-light custom-margin-right"
                       data-bs-toggle="modal"
                       data-bs-target="#testCaseModal"
                       onClick={() => this.editTcClick(tc)}
@@ -757,7 +1155,7 @@ export class Project extends Component {
                     </button>
                     <button
                       type="button"
-                      className="btn btn-light mr-1"
+                      className="btn btn-light custom-margin-right"
                       onClick={() => this.deleteTcClick(tc.TestCaseId)}
                     >
                       <svg

@@ -92,3 +92,61 @@ a:hover {
 .wide-button {
   width: 100px;
 }
+
+.btn-pressed {
+  background-color: #007bff;
+  color: white;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.button-group .btn {
+  margin-right: 10px;
+}
+
+.d-flex {
+  display: flex;
+  justify-content: center;
+}
+
+.min-vh-100 {
+  min-height: 100vh;
+}
+
+.card-text {
+  text-align: justify;
+}
+
+.custom-margin-right {
+  margin-right: 5px;
+}
+
+.status-circle {
+  width: 14px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.status-passed {
+  background-color: green;
+}
+
+.status-failed {
+  background-color: red;
+}
+
+.status-blocked {
+  background-color: rgb(0, 179, 255);
+}
+
+.status-retest {
+  background-color: yellow;
+}
