@@ -206,6 +206,10 @@ export class Project extends Component {
   }
 
   createClick() {
+    if (!this.state.ProjectDescription.trim()) {
+      alert("Project description cannot be empty.");
+      return;
+    }
     fetch(variables.API_URL + "project", {
       method: "POST",
       headers: {
@@ -242,6 +246,11 @@ export class Project extends Component {
       "and description:",
       this.state.ProjectDescription
     );
+
+    if (!this.state.ProjectDescription.trim()) {
+      alert("Project description cannot be empty.");
+      return;
+    }
     fetch(variables.API_URL + "project", {
       method: "PUT",
       headers: {
@@ -324,12 +333,13 @@ export class Project extends Component {
       TestCaseId: tc.TestCaseId,
       TestCaseName: tc.TestCaseName,
     });
-
-    //const modal = new bootstrap.Modal(document.getElementById("testCaseModal"));
-    // modal.show();
   }
 
   createTcClick() {
+    if (!this.state.TestCaseName.trim()) {
+      alert("TestCase description cannot be empty.");
+      return;
+    }
     fetch(variables.API_URL + "TestCase", {
       method: "POST",
       headers: {
@@ -367,6 +377,11 @@ export class Project extends Component {
       "and description:",
       this.state.TestCaseName
     );
+
+    if (!this.state.TestCaseName.trim()) {
+      alert("TestCase description cannot be empty.");
+      return;
+    }
     fetch(variables.API_URL + "TestCase", {
       method: "PUT",
       headers: {
@@ -444,7 +459,7 @@ export class Project extends Component {
       modalTitle: "Edit Test Step",
       StepDescription: ts.StepDescription,
       ExpectedResult: ts.ExpectedResult,
-      ScenarioID: ts.ScenarioID,
+      StepID: ts.StepID,
       TestCaseName: "",
     });
   }
@@ -458,6 +473,13 @@ export class Project extends Component {
   }
 
   createTcStepClick() {
+    if (
+      !this.state.StepDescription.trim() ||
+      !this.state.ExpectedResult.trim()
+    ) {
+      alert("There are empty fields.");
+      return;
+    }
     fetch(variables.API_URL + "TestCaseSteps", {
       method: "POST",
       headers: {
@@ -492,6 +514,13 @@ export class Project extends Component {
   }
 
   updateTcStepClick() {
+    if (
+      !this.state.StepDescription.trim() ||
+      !this.state.ExpectedResult.trim()
+    ) {
+      alert("There are empty fields.");
+      return;
+    }
     fetch(variables.API_URL + "TestCaseSteps", {
       method: "PUT",
       headers: {
@@ -501,7 +530,7 @@ export class Project extends Component {
       body: JSON.stringify({
         StepDescription: this.state.StepDescription,
         ExpectedResult: this.state.ExpectedResult,
-        ScenarioID: this.state.ScenarioID,
+        StepID: this.state.StepID,
         TestCaseName: "",
       }),
     })
