@@ -15,7 +15,7 @@ const AppContent = ({ handleProjectButtonClick, isProjectButtonPressed }) => {
 
   return (
     <div className="container mt-4">
-      <h2 className="text-center">Dakar Testing App</h2>
+      <h3 className="text-center">Manage Test Plans</h3>
       <div className="button-container">
         {location.pathname !== "/" && (
           <Link className="btn btn-primary mx-2" to="/">

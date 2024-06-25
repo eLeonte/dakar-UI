@@ -205,7 +205,7 @@ export class Project extends Component {
     });
   }
 
-  createClick() {
+  createProject() {
     if (!this.state.ProjectDescription.trim()) {
       alert("Project description cannot be empty.");
       return;
@@ -239,7 +239,7 @@ export class Project extends Component {
       );
   }
 
-  updateClick() {
+  updateProject() {
     console.log(
       "Updating project with ID:",
       this.state.ProjectId,
@@ -281,10 +281,10 @@ export class Project extends Component {
       );
   }
 
-  deleteClick(id) {
+  deleteProject(id) {
     if (
       window.confirm(
-        "Are you sure? Test cases related to this project will also be removed"
+        "Are you sure? Test cases related to this project will also be removed."
       )
     ) {
       fetch(variables.API_URL + "project/" + id, {
@@ -597,7 +597,7 @@ export class Project extends Component {
       day: "numeric",
     });
 
-    // Convert the report data to HTML
+    // Facem conversie din raport in date html
     const reportHtml = `
       <html>
         <head>
@@ -672,16 +672,14 @@ export class Project extends Component {
       </html>
     `;
 
-    // Open a new window and write the report HTML
+    // Deschidem o noua fereastra si scriem raportul HTML
     const reportWindow = window.open("", "_blank");
     reportWindow.document.write(reportHtml);
     reportWindow.document.close();
 
-    // Trigger the print dialog
     reportWindow.print();
   }
 
-  //Handler for status change dropdown
   handleStatusChange(testCaseId, event) {
     const { value } = event.target;
     this.setState((prevState) => ({
@@ -966,7 +964,7 @@ export class Project extends Component {
             >
               Back to Test Cases
             </button>
-            <h2>{selectedTestCaseName}</h2>
+            <h4>{selectedTestCaseName}</h4>
             <table className="table table-hover">
               <thead className="thead-dark">
                 <tr>
@@ -1136,7 +1134,7 @@ export class Project extends Component {
               Test Run
             </button>
           </div>
-          <h2>{selectedProjectDescription}</h2>
+          <h4>{selectedProjectDescription}</h4>
           <table className="table table-hover">
             <thead className="thead-dark">
               <tr>
@@ -1307,7 +1305,7 @@ export class Project extends Component {
                     <button
                       type="button"
                       className="btn btn-light mr-1"
-                      onClick={() => this.deleteClick(prj.ProjectID)}
+                      onClick={() => this.deleteProject(prj.ProjectID)}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -1375,7 +1373,7 @@ export class Project extends Component {
                   <button
                     type="button"
                     className="btn btn-primary float-start"
-                    onClick={() => this.createClick()}
+                    onClick={() => this.createProject()}
                   >
                     Create
                   </button>
@@ -1384,7 +1382,7 @@ export class Project extends Component {
                   <button
                     type="button"
                     className="btn btn-primary float-start"
-                    onClick={() => this.updateClick()}
+                    onClick={() => this.updateProject()}
                   >
                     Update
                   </button>
